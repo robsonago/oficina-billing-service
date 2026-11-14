@@ -1,0 +1,61 @@
+# Banco NoSQL do Billing: um MongoDB por namespace, com disco persistente.
+# Usuário e senha vêm do secret oficina-billing-mongodb, criado pelo
+# Terraform em oficina-infra-k8s (a senha é gerada lá, nunca fica no git).
+apiVersion: v1
+kind: Service
+metadata:
+  name: oficina-billing-mongodb
+  labels:
+    app: oficina-billing-mongodb
+spec:
+  clusterIP: None
+  selector:
+    app: oficina-billing-mongodb
+  ports:
+    - port: 27017
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: oficina-billing-mongodb
+spec:
+  serviceName: oficina-billing-mongodb
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oficina-billing-mongodb
+  template:
+    metadata:
+      labels:
+        app: oficina-billing-mongodb
+    spec:
+      containers:
+        - name: mongodb
+          image: mongo:7.0
+          ports:
+            - containerPort: 27017
+          envFrom:
+            - secretRef:
+                name: oficina-billing-mongodb
+          readinessProbe:
+            exec:
+              command: ["mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          volumeMounts:
+            - name: dados
+              mountPath: /data/db
+  volumeClaimTemplates:
+    - metadata:
+        name: dados
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 2Gi

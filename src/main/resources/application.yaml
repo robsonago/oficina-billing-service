@@ -1,0 +1,61 @@
+spring:
+  application:
+    name: oficina-billing-service
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/oficina_billing}
+      auto-index-creation: true
+
+server:
+  port: ${SERVER_PORT:8081}
+  forward-headers-strategy: framework
+
+jwt:
+  secret: ${JWT_SECRET:bXlTdXBlclNlY3JldEtleUZvckpXVFN5c3RlbU9maWNpbmFNZWNhbmljYTIwMjQ=}
+
+mensageria:
+  # pubsub: GCP ou emulador local | memoria: sobe sem broker (só para testes/desenvolvimento)
+  provider: ${MENSAGERIA_PROVIDER:memoria}
+  project-id: ${PUBSUB_PROJECT_ID:oficina-local}
+  emulador-host: ${PUBSUB_EMULATOR_HOST:}
+  assinatura: ${PUBSUB_ASSINATURA_COMANDOS:oficina-billing-comandos-local-billing}
+  topicos:
+    os-eventos: ${PUBSUB_TOPICO_OS_EVENTOS:oficina-os-eventos-local}
+    notificacoes: ${PUBSUB_TOPICO_NOTIFICACOES:oficina-notificacoes-local}
+
+pagamento:
+  # simulado: sem credencial, pagamento disparado por POST /api/pagamentos/simulacao/{id}
+  # mercadopago: integração real (sandbox ou produção)
+  provider: ${PAGAMENTO_PROVIDER:simulado}
+  simulado:
+    link-base: ${PAGAMENTO_SIMULADO_LINK_BASE:http://localhost:8081/api/pagamentos/simulacao}
+  mercadopago:
+    access-token: ${MERCADOPAGO_ACCESS_TOKEN:}
+    notification-url: ${MERCADOPAGO_NOTIFICATION_URL:}
+    webhook-secret: ${MERCADOPAGO_WEBHOOK_SECRET:}
+    sandbox: ${MERCADOPAGO_SANDBOX:true}
+
+springdoc:
+  api-docs:
+    path: /billing/api-docs
+  swagger-ui:
+    path: /billing/swagger-ui.html
+    operations-sorter: method
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      service: oficina-billing-service
+
+logging:
+  level:
+    br.com.fiap: INFO
+    org.springframework.security: WARN

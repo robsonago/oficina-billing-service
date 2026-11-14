@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oficina-billing
+  labels:
+    app: oficina-billing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oficina-billing
+  template:
+    metadata:
+      labels:
+        app: oficina-billing
+    spec:
+      # Workload Identity: publica/consome no Pub/Sub sem chave de service account
+      serviceAccountName: oficina-billing
+      containers:
+        - name: oficina-billing
+          image: ghcr.io/robsonago/oficina-billing-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: oficina-billing-config
+            - secretRef:
+                name: oficina-billing-secret
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            failureThreshold: 60
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "384Mi"
+            limits:
+              cpu: "1000m"
+              memory: "640Mi"
