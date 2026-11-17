@@ -41,6 +41,8 @@ spec:
             exec:
               command: ["mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
             periodSeconds: 10
+            # o mongosh leva mais de 1s (padrão) para subir com 0,5 CPU
+            timeoutSeconds: 10
           resources:
             requests:
               cpu: "100m"
